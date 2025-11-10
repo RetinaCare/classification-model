@@ -1,8 +1,9 @@
 streamlit
-torch==2.5.0
+torch
 torchvision
 pillow
 numpy
+
 
 
 
