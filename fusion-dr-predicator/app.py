@@ -11,7 +11,7 @@ from risk_mapper import map_risk
 # === Load Model ===
 device = torch.device("cpu")
 model = FusionModel()
-model.load_state_dict(torch.load("fusion_model_mvp.pth", map_location=device))
+model.load_state_dict(torch.load(torch.load("./fusion-dr-predicator/fusion_model_mvp.pth", map_location=device)))
 model.to(device)
 model.eval()
 
@@ -36,4 +36,5 @@ if uploaded_file and st.button("Predict Risk"):
 
     st.subheader(f"Prediction: {['No DR', 'Mild NPDR', 'Moderate NPDR', 'Severe NPDR', 'PDR'][pred_index]}")
     st.write(f"Probability Vector: {np.round(probabilities, 3)}")
+
     st.success(recommendation)
