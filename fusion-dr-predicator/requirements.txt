@@ -1,4 +1,4 @@
-streamlit==1.31.0
+gradio==4.16.0
 torch==2.9.0
 torchvision==0.24.0
 Pillow==12.0.0
