@@ -1,4 +1,4 @@
-import streamlit as st
+import gradio as gr
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -44,12 +44,9 @@ class FusionModel(nn.Module):
         return x
 
 # Load model
-@st.cache_resource
-def load_model():
-    model = FusionModel(num_classes=5, clinical_features=3)
-    model.load_state_dict(torch.load('fusion_model_mvp.pth', map_location=torch.device('cpu')))
-    model.eval()
-    return model
+model = FusionModel(num_classes=5, clinical_features=3)
+model.load_state_dict(torch.load('fusion_model_mvp.pth', map_location=torch.device('cpu')))
+model.eval()
 
 # Image preprocessing
 def preprocess_image(image):
@@ -77,130 +74,143 @@ RECOMMENDATIONS = {
     4: "Immediate ophthalmologist referral required. High risk of vision loss."
 }
 
-# Streamlit UI
-st.set_page_config(page_title="RetinaCare DR Classifier", page_icon="👁️", layout="centered")
+# Prediction function
+def predict_dr(image, hba1c, blood_pressure, duration):
+    try:
+        # Convert to PIL Image if needed
+        if not isinstance(image, Image.Image):
+            image = Image.fromarray(image).convert('RGB')
+        else:
+            image = image.convert('RGB')
+        
+        # Preprocess image
+        img_tensor = preprocess_image(image)
+        
+        # Prepare clinical data
+        clinical_data = torch.tensor([[hba1c, blood_pressure, duration]], dtype=torch.float32)
+        
+        # Make prediction
+        with torch.no_grad():
+            output = model(img_tensor, clinical_data)
+            probabilities = torch.softmax(output, dim=1)
+            predicted_class = torch.argmax(probabilities, dim=1).item()
+            confidence = probabilities[0][predicted_class].item() * 100
+        
+        # Format results
+        severity = DR_CLASSES[predicted_class]
+        recommendation = RECOMMENDATIONS[predicted_class]
+        
+        # Create probability dictionary for all classes
+        prob_dict = {DR_CLASSES[i]: float(probabilities[0][i].item()) for i in range(5)}
+        
+        # Result text
+        result_text = f"""
+## 🔍 Diagnosis Results
 
-st.title("👁️ RetinaCare: DR Severity Classifier")
-st.markdown("**Multimodal AI-powered Diabetic Retinopathy Detection**")
-st.markdown("---")
+**Predicted Severity:** {severity}  
+**Confidence:** {confidence:.1f}%
 
-# Sidebar for clinical inputs
-st.sidebar.header("📋 Clinical Information")
-hba1c = st.sidebar.number_input(
-    "HbA1c Level (%)", 
-    min_value=4.0, 
-    max_value=15.0, 
-    value=7.0, 
-    step=0.1,
-    help="Glycated hemoglobin level (normal: 4-5.6%)"
-)
+---
 
-blood_pressure = st.sidebar.number_input(
-    "Systolic Blood Pressure (mmHg)", 
-    min_value=80, 
-    max_value=200, 
-    value=120, 
-    step=1,
-    help="Systolic blood pressure reading"
-)
+### 📋 Recommendation:
+{recommendation}
 
-duration = st.sidebar.number_input(
-    "Duration of Diabetes (years)", 
-    min_value=0, 
-    max_value=50, 
-    value=5, 
-    step=1,
-    help="Years since diabetes diagnosis"
-)
+---
 
-# Main content area
-st.header("📸 Upload Retinal Image")
-uploaded_file = st.file_uploader(
-    "Choose a retinal fundus image", 
-    type=['jpg', 'jpeg', 'png'],
-    help="Upload a color fundus photograph of the retina"
-)
+### 📊 Clinical Input Summary:
+- **HbA1c Level:** {hba1c}%
+- **Blood Pressure:** {blood_pressure} mmHg
+- **Diabetes Duration:** {duration} years
 
-if uploaded_file is not None:
-    # Display uploaded image
-    col1, col2 = st.columns(2)
+---
+
+⚠️ **Disclaimer:** This is an AI-assisted diagnostic tool for research and educational purposes. It should not replace professional medical judgment. Always consult with a qualified ophthalmologist for clinical decisions.
+        """
+        
+        return result_text, prob_dict
+        
+    except Exception as e:
+        return f"❌ Error during prediction: {str(e)}\n\nPlease ensure the image is a valid retinal fundus photograph.", {}
+
+# Create Gradio interface
+with gr.Blocks(theme=gr.themes.Soft(), title="RetinaCare DR Classifier") as demo:
+    gr.Markdown(
+        """
+        # 👁️ RetinaCare: DR Severity Classifier
+        **AI-powered Diabetic Retinopathy Detection using Multimodal Fusion**
+        
+        Upload a retinal fundus image and provide clinical information to get an AI-powered DR severity assessment.
+        """
+    )
     
-    with col1:
-        st.subheader("Uploaded Image")
-        image = Image.open(uploaded_file).convert('RGB')
-        st.image(image, use_container_width=True)
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("### 📸 Retinal Image")
+            image_input = gr.Image(
+                type="pil",
+                label="Upload Retinal Fundus Image",
+                height=300
+            )
+            
+            gr.Markdown("### 📋 Clinical Information")
+            hba1c_input = gr.Slider(
+                minimum=4.0,
+                maximum=15.0,
+                value=7.0,
+                step=0.1,
+                label="HbA1c Level (%)",
+                info="Glycated hemoglobin level (normal: 4-5.6%)"
+            )
+            
+            bp_input = gr.Slider(
+                minimum=80,
+                maximum=200,
+                value=120,
+                step=1,
+                label="Systolic Blood Pressure (mmHg)",
+                info="Systolic blood pressure reading"
+            )
+            
+            duration_input = gr.Slider(
+                minimum=0,
+                maximum=50,
+                value=5,
+                step=1,
+                label="Duration of Diabetes (years)",
+                info="Years since diabetes diagnosis"
+            )
+            
+            predict_btn = gr.Button("🔍 Analyze Retinal Image", variant="primary", size="lg")
+        
+        with gr.Column(scale=1):
+            gr.Markdown("### 📊 Analysis Results")
+            result_output = gr.Markdown(label="Diagnosis")
+            
+            gr.Markdown("### 📈 Probability Distribution")
+            prob_output = gr.Label(label="Class Probabilities", num_top_classes=5)
     
-    with col2:
-        st.subheader("Clinical Data")
-        st.metric("HbA1c", f"{hba1c}%")
-        st.metric("Blood Pressure", f"{blood_pressure} mmHg")
-        st.metric("Diabetes Duration", f"{duration} years")
+    # Connect button to prediction function
+    predict_btn.click(
+        fn=predict_dr,
+        inputs=[image_input, hba1c_input, bp_input, duration_input],
+        outputs=[result_output, prob_output]
+    )
     
-    # Predict button
-    if st.button("🔍 Analyze Retinal Image", type="primary"):
-        with st.spinner("Analyzing image..."):
-            try:
-                # Load model
-                model = load_model()
-                
-                # Preprocess image
-                img_tensor = preprocess_image(image)
-                
-                # Prepare clinical data
-                clinical_data = torch.tensor([[hba1c, blood_pressure, duration]], dtype=torch.float32)
-                
-                # Make prediction
-                with torch.no_grad():
-                    output = model(img_tensor, clinical_data)
-                    probabilities = torch.softmax(output, dim=1)
-                    predicted_class = torch.argmax(probabilities, dim=1).item()
-                    confidence = probabilities[0][predicted_class].item() * 100
-                
-                # Display results
-                st.markdown("---")
-                st.header("📊 Analysis Results")
-                
-                # Prediction with color coding
-                severity = DR_CLASSES[predicted_class]
-                colors = {
-                    "No DR": "green",
-                    "Mild NPDR": "blue",
-                    "Moderate NPDR": "orange",
-                    "Severe NPDR": "red",
-                    "Proliferative DR": "darkred"
-                }
-                
-                st.markdown(f"### Predicted Severity: :{colors[severity]}[{severity}]")
-                st.metric("Confidence", f"{confidence:.1f}%")
-                
-                # Recommendation
-                st.info(f"**Recommendation:** {RECOMMENDATIONS[predicted_class]}")
-                
-                # Show probability distribution
-                st.subheader("Probability Distribution")
-                prob_dict = {DR_CLASSES[i]: f"{probabilities[0][i].item()*100:.1f}%" for i in range(5)}
-                st.bar_chart({k: float(v.rstrip('%')) for k, v in prob_dict.items()})
-                
-                # Disclaimer
-                st.warning("⚠️ **Disclaimer:** This is an AI-assisted diagnostic tool and should not replace professional medical judgment. Always consult with a qualified ophthalmologist for clinical decisions.")
-                
-            except Exception as e:
-                st.error(f"Error during prediction: {str(e)}")
-                st.info("Please ensure the image is a valid retinal fundus photograph.")
+    gr.Markdown(
+        """
+        ---
+        ### 🏥 DR Severity Classification Guide:
+        - **No DR:** No visible signs of diabetic retinopathy
+        - **Mild NPDR:** Presence of microaneurysms only
+        - **Moderate NPDR:** More than just microaneurysms, but less than severe NPDR
+        - **Severe NPDR:** Extensive hemorrhages, venous beading, or IRMA
+        - **Proliferative DR:** Growth of new blood vessels (highest risk of vision loss)
+        
+        ---
+        *RetinaCare DR Classifier | Powered by Deep Learning | For research and educational purposes*
+        """
+    )
 
-else:
-    st.info("👆 Please upload a retinal image to begin analysis")
-
-# Footer
-st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center'>
-        <p style='color: gray; font-size: 0.9em'>
-            RetinaCare DR Classifier | Powered by Deep Learning<br>
-            For research and educational purposes
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# Launch the app
+if __name__ == "__main__":
+    demo.launch()
