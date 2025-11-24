@@ -3,13 +3,18 @@ import sys
 import os
 import torch
 
+from flask import Flask, request, jsonify
+from werkzeug.utils import secure_filename
+from PIL import Image
+
+# * ******************************************************
+# Due to how python works, I need to load from paths
+# this way.
+# * ******************************************************
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_SRC = os.path.join(BASE_DIR, "model", "src")
 sys.path.append(MODEL_SRC)
 
-from flask import Flask, request, jsonify
-from werkzeug.utils import secure_filename
-from PIL import Image
 from fusion_model import FusionModel
 
 # * ******************************************************
@@ -17,6 +22,30 @@ from fusion_model import FusionModel
 # * ******************************************************
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 # 16 MB
+
+# * ******************************************************
+# Model loading
+# * ******************************************************
+def load_model():
+    """
+    Loads classification model from Digital Ocean Spaces.
+    """
+    try:
+        url = "https://s3.retinacare.ams3.digitaloceanspaces.com/fusion_model_mvp.pth"
+        state_dict = torch.hub.load_state_dict_from_url(
+            url,
+            map_location="cpu",
+            check_hash=False,
+            progress=True
+        )
+        model = FusionModel().to("cpu")
+        model.load_state_dict(state_dict)
+        model.eval()
+        return model
+    except Exception:
+        return False
+
+model = load_model()
 
 # * ******************************************************
 # Endpoints
@@ -30,13 +59,26 @@ def upload_image():
             'message': 'Image validated successfully',
             'filename': filename
         }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 400
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        clin_features = validate_clinical_features()
+        return jsonify({
+            'success': True,
+            'message': "Valid request"
+        }), 200
 
     except Exception as e:
         return jsonify({
-            'success': True,
-            'message': repr(e)
+            'success': False,
+            'message': str(e)
         }), 400
-
 
 # Test route to upload form
 @app.route('/', methods=['GET'])
@@ -88,27 +130,27 @@ def validate_image_type(file_stream):
     try:
         file_stream.seek(0)
         img = Image.open(file_stream)
-        is_jpeg = img.format == 'JPEG'
         file_stream.seek(0)
-        return is_jpeg
+        return img.format == 'JPEG'
     except Exception:
         file_stream.seek(0)
         return False
 
 
-def load_model():
-    """
-    Loads classfication model from Digital Ocean Spaces.
-    """
-    try:
-        url = "https://s3.retinacare.ams3.digitaloceanspaces.com/fusion_model_mvp.pth"
-        state_dict = torch.hub.load_state_dict_from_url(url, map_location="cpu")
-        model = FusionModel().to("cpu")
-        model.load_state_dict(state_dict)
-        model.eval()
-        return model
-    except Exception:
-        return False
+def validate_clinical_features():
+    if request.json is None:
+        raise Exception("Clinical features not provided")
+
+    if request.json.get("hba1c") is None:
+        raise Exception("Hba1c key is missing")
+
+    if request.json.get("blood_pressure") is None:
+        raise Exception("Blood Pressure key is missing")
+
+    if request.json.get("duration") is None:
+        raise Exception("Duration key is missing")
+
+    return request.json
 
 
 if __name__ == '__main__':

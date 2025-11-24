@@ -14,7 +14,7 @@ Simple REST API to handle predictions. Written in Flask.
   ```
 4. Once done, run the Flask app using this command:
   ```bash
-  python3 ./flash_app.py
+  python3 ./flask_app.py
   ```
 
 **NOTE:** This will start a server at localhost:8000, for deploying to prod, use Docker.
