@@ -50,25 +50,26 @@ model = load_model()
 # * ******************************************************
 # Endpoints
 # * ******************************************************
-@app.route('/upload', methods=['POST'])
-def upload_image():
-    try:
-        filename = validate_request()
-        return jsonify({
-            'success': True,
-            'message': 'Image validated successfully',
-            'filename': filename
-        }), 200
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 400
+# @app.route('/upload', methods=['POST'])
+# def upload_image():
+#     try:
+#         filename = validate_request()
+#         return jsonify({
+#             'success': True,
+#             'message': 'Image validated successfully',
+#             'filename': filename
+#         }), 200
+#     except Exception as e:
+#         return jsonify({
+#             'success': False,
+#             'message': str(e)
+#         }), 400
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        clin_features = validate_clinical_features()
+        image = validate_request_image()
+        features = validate_request_features()
         return jsonify({
             'success': True,
             'message': "Valid request"
@@ -102,7 +103,7 @@ def home():
 # * ******************************************************
 #  HELPER FUNCTIONS
 # * ******************************************************
-def validate_request():
+def validate_request_image():
     if 'image' not in request.files:
         raise Exception("No image file provided")
 
@@ -116,8 +117,7 @@ def validate_request():
     if not validate_image_type(file.stream):
         raise Exception("File is not a valid JPEG image")
 
-    return secure_filename(file.filename)
-
+    return file
 
 def allowed_file(filename):
     """Check if the file has an allowed extension"""
@@ -137,20 +137,21 @@ def validate_image_type(file_stream):
         return False
 
 
-def validate_clinical_features():
-    if request.json is None:
-        raise Exception("Clinical features not provided")
+def validate_request_features():
+    if 'hba1c' not in request.form:
+            raise Exception("Hba1c key is missing")
 
-    if request.json.get("hba1c") is None:
-        raise Exception("Hba1c key is missing")
-
-    if request.json.get("blood_pressure") is None:
+    if "blood_pressure" not in request.form:
         raise Exception("Blood Pressure key is missing")
 
-    if request.json.get("duration") is None:
+    if "duration" not in request.form:
         raise Exception("Duration key is missing")
 
-    return request.json
+    return {
+        'hba1c': float(request.form['hba1c']),
+        'blood_pressure': float(request.form['blood_pressure']),
+        'duration': float(request.form['duration'])
+    }
 
 
 if __name__ == '__main__':
