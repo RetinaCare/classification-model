@@ -3,3 +3,6 @@ werkzeug
 Pillow
 torch
 numpy
+torchvision
+requests
+boto3
