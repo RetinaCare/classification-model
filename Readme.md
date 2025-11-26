@@ -7,22 +7,22 @@
 
 ---
 
-## 📖 Project Overview
+##  Project Overview
 **RetinaCare Fusion DR Predictor** is an AI-powered diagnostic tool designed to **predict the severity of Diabetic Retinopathy (DR)** by fusing retinal image features with patient clinical data.  
 
 This system supports **early detection**, **risk assessment**, and **personalized follow-up recommendations**, empowering healthcare providers to make informed decisions. The ML model has been deployed both as a **standalone demo on Hugging Face** and integrated into a **full-stack web application** developed by the RetinaCare team for production use.
 
 ### ✨ Key Features
-- 🔍 **Multimodal AI Analysis** - Combines retinal images with clinical data
-- 📊 **5-Class DR Severity Classification** - From No DR to Proliferative DR
-- 💡 **Intelligent Risk Assessment** - Evidence-based follow-up recommendations
-- 🌐 **Dual Deployment** - Hugging Face demo + Full-stack web application
-- 🔌 **Backend Integration** - Model API for seamless healthcare system integration
-- ⚡ **Real-Time Predictions** - Instant analysis and results
+-  **Multimodal AI Analysis** - Combines retinal images with clinical data
+-  **5-Class DR Severity Classification** - From No DR to Proliferative DR
+-  **Intelligent Risk Assessment** - Evidence-based follow-up recommendations
+-  **Dual Deployment** - Hugging Face demo + Full-stack web application
+-  **Backend Integration** - Model API for seamless healthcare system integration
+-  **Real-Time Predictions** - Instant analysis and results
 
 ---
 
-## 🗺️ Model Development Workflow
+##  Model Development Workflow
 
 ### 1. Problem Definition
 The model classifies Diabetic Retinopathy (DR) severity into five categories:
@@ -115,10 +115,10 @@ An interactive **Gradio** application enables real-time testing and validation:
 **Features:**
 - 📸 Upload retinal fundus images (JPG, PNG)
 - 📋 Input clinical parameters via intuitive sliders
-- 🔍 One-click analysis with instant results
-- 📊 Probability distribution visualization
-- 💡 Automated follow-up recommendations
-- 📱 Mobile-friendly responsive design
+-  One-click analysis with instant results
+-  Probability distribution visualization
+-  Automated follow-up recommendations
+-  Mobile-friendly responsive design
 
 **Deployment:**
 - Hosted on **Hugging Face Spaces** (free tier)
@@ -128,12 +128,12 @@ An interactive **Gradio** application enables real-time testing and validation:
 
 ---
 
-## 🧠 How the Fusion DR Model Works
+##  How the Fusion DR Model Works
 
-### 🔹 Step 1: Input Collection
+###  Step 1: Input Collection
 The user provides two types of input:
-- 🖼️ **Retinal Fundus Image** (color photograph of the retina)
-- 🧪 **Clinical Data**:
+-  **Retinal Fundus Image** (color photograph of the retina)
+-  **Clinical Data**:
   - HbA1c level (4.0-15.0%)
   - Systolic Blood Pressure (80-200 mmHg)
   - Duration of Diabetes (0-50 years)
@@ -142,7 +142,7 @@ These inputs represent both visual and physiological indicators of diabetic reti
 
 ---
 
-### 🔹 Step 2: Image Preprocessing & Feature Extraction
+###  Step 2: Image Preprocessing & Feature Extraction
 - The uploaded image is resized to **224×224 pixels**
 - Normalized using **ImageNet statistics** (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 - Passed through **pretrained ResNet50** (frozen weights)
@@ -152,14 +152,14 @@ These inputs represent both visual and physiological indicators of diabetic reti
 
 ---
 
-### 🔹 Step 3: Clinical Data Formatting
+###  Step 3: Clinical Data Formatting
 - The three clinical values are converted into a **tensor** of shape `[1, 3]`
 - No normalization applied (used as-is)
 - These features represent the patient's metabolic and cardiovascular health
 
 ---
 
-### 🔹 Step 4: Feature Fusion
+###  Step 4: Feature Fusion
 - **2048-d image features** → processed by Image Branch → **256-d**
 - **3-d clinical features** → processed by Clinical Branch → **32-d**
 - Concatenated into a **288-dimensional fused vector**
@@ -167,7 +167,7 @@ These inputs represent both visual and physiological indicators of diabetic reti
 
 ---
 
-### 🔹 Step 5: Prediction via Fusion Model
+###  Step 5: Prediction via Fusion Model
 - The 288-d fused vector passes through fully connected layers
 - Outputs a **5-class probability vector** via softmax
 - Each value represents the likelihood of one DR grade
@@ -180,24 +180,24 @@ No DR: 5%  |  Mild: 10%  |  Moderate: 70%  |  Severe: 10%  |  PDR: 5%
 
 ---
 
-### 🔹 Step 6: Risk Assessment & Recommendations
+###  Step 6: Risk Assessment & Recommendations
 - The predicted class is mapped to a risk level
 - Clinical follow-up recommendations are generated
 - Results are displayed with confidence scores
 
 ---
 
-### 🔹 Step 7: Output Display
+###  Step 7: Output Display
 The app displays:
-- ✅ **Predicted DR Severity** (e.g., Moderate NPDR)
-- 📊 **Confidence Score** (e.g., 70.0%)
-- 📈 **Probability Distribution** (bar chart of all 5 classes)
-- 📋 **Follow-Up Recommendation** (e.g., "Follow-up in 6-9 months")
+-  **Predicted DR Severity** (e.g., Moderate NPDR)
+-  **Confidence Score** (e.g., 70.0%)
+-  **Probability Distribution** (bar chart of all 5 classes)
+-  **Follow-Up Recommendation** (e.g., "Follow-up in 6-9 months")
 - 🔬 **Clinical Input Summary** (HbA1c, BP, Duration)
 
 ---
 
-## 📦 Repository Structure
+##  Repository Structure
 
 ```
 fusion-dr-predicator/
@@ -256,7 +256,7 @@ The app will launch at `http://localhost:7860`
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
@@ -270,7 +270,7 @@ The app will launch at `http://localhost:7860`
 
 ---
 
-## 📊 Model Performance
+##  Model Performance
 
 - **Architecture:** ResNet50 (feature extractor) + Custom Fusion Layers
 - **Model Size:** 2.2 MB (highly efficient)
@@ -280,7 +280,7 @@ The app will launch at `http://localhost:7860`
 
 ---
 
-## 💻 Usage Guide
+##  Usage Guide
 
 ### Using the Web Interface
 
@@ -291,7 +291,7 @@ The app will launch at `http://localhost:7860`
    - Adjust HbA1c slider (4.0-15.0%)
    - Set Blood Pressure (80-200 mmHg)
    - Enter Diabetes Duration (0-50 years)
-4. **Analyze:** Click "🔍 Analyze Retinal Image"
+4. **Analyze:** Click " Analyze Retinal Image"
 5. **Review Results:** View prediction, confidence, and recommendations
 
 #### Option 2: Full Web Application (Coming Soon)
@@ -328,7 +328,7 @@ The model is designed to support healthcare providers in screening and risk asse
 
 ---
 
-## 🔮 Future Improvements
+##  Future Improvements
 
 ### Model Enhancements
 - [ ] **Explainable AI:** Integrate Grad-CAM visualizations to highlight DR-related regions
@@ -351,11 +351,6 @@ The model is designed to support healthcare providers in screening and risk asse
 
 ---
 
-## 📄 License
-
-[Add your license here - e.g., MIT, Apache 2.0]
-
----
 
 ## 📞 Contact & Support
 
@@ -363,11 +358,10 @@ For questions, feedback, or collaboration:
 - **Model Demo:** [Hugging Face Space](https://huggingface.co/spaces/MudLegacy/retinacare-dr-classifier)
 - **GitHub Repository:** [RetinaCare Classification Model](https://github.com/RetinaCare/classification-model)
 - **ML Engineer:** Almustapha Damilola Usman
-- **Project Lead:** [RetinaCare Team Contact]
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Dataset:** EyePACS, APTOS & Messidor teams for providing comprehensive DR datasets
 - **PyTorch & Torchvision:** For robust deep learning framework and pretrained models
