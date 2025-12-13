@@ -3,7 +3,7 @@
 ## 🔗 Live Demo
 **🌐 [Try the Live Model on Hugging Face Spaces](https://huggingface.co/spaces/MudLegacy/retinacare-dr-classifier)**
 
-**🌐 [Full Web Application](https://retinacare.com)** *(Coming Soon - Under Development)*
+**🌐 [Full Web Application](https://frontend-eosin-nu.vercel.app/))** 
 
 ---
 
